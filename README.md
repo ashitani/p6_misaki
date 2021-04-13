@@ -7,11 +7,11 @@ OSXでしか確認していません。
 
 # requirement
 
-- (XSM)[https://github.com/garymsx/xsm]　アセンブル
-- (z88dk)[https://github.com/z88dk/z88dk]　CASファイル作成など
-- (8x8DotJPFont)[https://github.com/emutyworks/8x8DotJPFont]
-- python フォント/テキストデータの変換
-- java XSMの実行のため
+- [XSM](https://github.com/garymsx/xsm): アセンブル
+- [z88dk](https://github.com/z88dk/z88dk): CASファイル作成など
+- [8x8DotJPFont](https://github.com/emutyworks/8x8DotJPFont)
+- python: フォント/テキストデータの変換
+- java: XSMの実行のため
 
 # 使い方
 
