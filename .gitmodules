@@ -1,0 +1,3 @@
+[submodule "font/8x8DotJPFont"]
+	path = font/8x8DotJPFont
+	url = https://github.com/emutyworks/8x8DotJPFont
