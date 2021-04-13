@@ -1,6 +1,7 @@
 # P6_Misaki
 
 PC6001(初代32K) で美咲フォントを使った文章を表示します。
+OSXでしか確認していません。
 
 # requirement
 
@@ -12,19 +13,27 @@ PC6001(初代32K) で美咲フォントを使った文章を表示します。
 
 # 使い方
 
-Makefile内のパスを適宜設定したのちに
-
 ```
+> git clone https://github.com/garymsx/xsm.git
+> git clone --recursive https://github.com/ashitani/p6_misaki.git
+> cd p6_misaki
 > make
 ```
-でmain.casが出来ます。
+でmain.casが出来ます。うまく行かない場合はMakefile内のパスを適宜設定してください。
 
 ```
 > make run
 ```
 でエミュレータ(デフォルトではPC6001VX)が起動します。
 
+```
+How many pages? 1
+cload
+run
+```
+
+で実行できます。
+
 # 好きなテキストに差し替え
 
-text/text_data.txt
-を編集してmake。現状はすべて全角のutf-8を仮定しています。
+text/text_data.txtを編集してmakeすれば好きな文章を表示できます。現状はすべて全角のutf-8を仮定しています。
