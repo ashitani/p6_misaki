@@ -1,0 +1,322 @@
+// -----------------------------------------------------------------------------------
+//  各種設定
+// -----------------------------------------------------------------------------------
+
+import "text/text_data.xsm";   // テキスト
+import "font/font_data.xsm";   // フォント
+
+// 乗算・除算ライブラリ
+import "../library/lang/mul.xsm";
+import "../library/lang/mulw.xsm";
+import "../library/lang/div.xsm";
+import "../library/lang/divw.xsm";
+
+// -------------------------------------------------------
+//  プログラム配置先
+// -------------------------------------------------------
+org 0x8437;    // RAM(32k) z88dkのローダ直後
+// org 0x4004; // 拡張ROM
+
+// -------------------------------------------------------
+//  shadow(プログラム外のRAM領域)
+// -------------------------------------------------------
+org 0xDFF0, shadow;
+shadow int stack_start;    // スタックの終端
+shadow byte [7] cdata;     // キャラクタデータ置き場
+shadow int sp_store;       // SPの退避先
+
+// -------------------------------------------------------
+//  定数
+// -------------------------------------------------------
+const int VRAMA  = 0xE000; // page 2 VRAM (ATTRIBUTE)
+const int VRAMD  = 0xE200; // page 2 VRAM (DATA)
+
+// -------------------------------------------------------
+//  BIOS関数
+// -------------------------------------------------------
+function wait_key()    = 0x0FC4;
+function set_port_b0() = 0x1B54;
+
+// -----------------------------------------------------------------------------------
+//  メイン
+// -----------------------------------------------------------------------------------
+
+// スタック設定
+// （デフォルトだとpage2相当のVRAMにスタックがかぶっているようなのでずらす）
+sp_store = SP;
+SP = &stack_start;
+
+// page2 VRAMをmode4で使う設定
+init_screen();
+
+// メイン処理
+clear_screen();
+draw_text();
+wait_key();
+
+// BASICインタプリタに復帰
+restore_screen();
+SP = sp_store;
+return;
+
+// -------------------------------------------------------
+//  サブルーチン
+// -------------------------------------------------------
+
+function fill_memory(HL, BC, D){
+    // メモリを指定したデータで埋める
+    // HL: address
+    // BC: length
+    // D : DATA
+    using(AF,HL,BC,DE){
+        while(){
+            *HL=D;
+            HL++;
+            BC--;
+            A=B;
+            A|=C;
+            if (A==0) break;
+        }
+    }
+    return;
+}
+
+function draw_char(DE, HL){
+    // 一文字描画する
+    // DE: Destination
+    // HL: character data
+    using (AF,BC,DE,HL){
+        B=7;
+        loop(B){
+            A=*HL;
+            *DE=A;
+            HL++;
+            using(AF,HL){unsafe{DE+=0x0020;}}
+        }
+        A=0x00;
+        *DE=A;
+    }
+    return;
+}
+
+function init_screen() {
+    // 画面の初期化
+
+    A=2;    // page 2
+    //A=0   // page 3
+    B=6;
+    set_port_b0();
+    
+    fill_memory(VRAMA,0x200,0xDC); // mode 4
+    return;
+}
+
+function clear_screen(){
+    // 画面クリア
+
+    fill_memory(VRAMD, 0x1800, 0x00);
+}
+
+function restore_screen(){    
+    // 画面をテキストモードに戻す
+
+    A=4; // page 1
+    B=6;
+    set_port_b0();
+
+    fill_memory(VRAMA,0x200,0x20);// mode 1
+ }
+
+function locate(B,C) return HL{
+    // テキスト座標に対応するVRAMアドレスを返す
+    // B=y, C=x
+    HL=VRAMD;
+    HL+=BC;
+    return HL;
+}
+
+function get_kuten_adr(B,C) return HL{
+    // 指定された区・点に対応するフォントデータの開始アドレスからのオフセットを返す
+    // B: 区
+    // C: 点
+    using (AF,BC,DE){
+        using(AF,HL){unsafe{
+            DE = C;
+            DE*=7;
+            DE/=8;
+            C=E;
+        }}
+        A=B;
+        if (A==1){
+            DE = C;
+            DE--;
+                using(AF,HL){unsafe{
+            DE*=7;
+                }}
+        }
+        if (A<=8 && A>=3){
+            DE = B;
+            using(AF,HL){unsafe{
+                DE-=2;
+                DE*=7;
+                DE*=82;
+            }}
+            push DE;
+            DE=C;
+            using(AF,HL){unsafe{DE*=7;}}
+            pop HL;
+            HL+=DE;
+            HL-=7;
+            DE=HL;
+        }
+        if (A>=16 && A<47){
+            DE=B;
+            using(AF,HL){unsafe{
+                DE-=12;
+                DE*=7;
+                DE*=82;
+            }}
+            push DE;
+            DE=C;
+            using(AF,HL){unsafe{DE*=7;}}
+            pop HL;
+            HL+=DE;
+            HL-=7;
+            DE=HL;
+        }
+        // 未定義だと豆腐を表示するようにしてもいいかも
+     HL=DE;
+    }
+    return HL;        
+}
+
+function get_kuten(B, C, HL) {
+    // 指定された区・点に対応するフォントデータを切り出して返す
+    // データが7bit単位に詰まっているので、シフトしたり隣とつないだりする。
+    // B: 区
+    // C: 点
+    // HL: このアドレスで始まる配列に切り出したデータを書き込む
+
+    // IX: source　IY: destination
+    IY=HL;
+    using(BC,DE,HL,IY){
+        DE=get_kuten_adr(B,C);
+        HL=&font_data;
+        HL+=DE;
+        IX=HL;
+    }
+
+    //    C=ten%8
+    A=C;
+    A&=7;
+    C=A;
+
+    HL=IX;  //font_data[adr]
+
+    B=7;
+    loop(B){
+        //  a=font_data[adr+i];  a->D
+        A=*HL;
+        D = A;
+        //  b=font_data[adr+i+7]; b->E
+        HL+=7;
+        A=*HL;
+        E = A;
+
+        if(C==0){
+            A=D; A<<1; D=A;
+            A=0; E=A;
+        }else{
+            //     a=a<<(9-tenp8);
+            A=D;
+            using(BC){
+                B=9;
+                using(AF){unsafe{B-=C;}};
+                loop(B){
+                    A<<1;
+                }
+            }
+            D=A;
+
+            //     b=b>>(tenp8-1);
+            A=E;
+            using(BC){
+                B=C;
+                B--;
+                if(B!=0){
+                loop(B){
+                    A>>1;
+                }
+                }
+            }
+            E=A;
+        }
+
+        // b&=0xFE;
+        A=E; A&=0xFE;
+
+        A|=D;
+
+        *IY=A;
+        IY++;
+
+        HL-=7;
+        HL++;  //adr+i
+    }
+    return;
+
+}
+
+
+// draw_font
+//
+// 指定した区、点のフォントを指定場所に描く
+// B,C =y,x
+// D,E = ku,ten
+function draw_font(B,C, D, E){
+    using(BC,DE){
+        get_kuten(D,E,&cdata);
+    }
+    DE=locate(B,C);
+    draw_char( DE, &cdata);
+}
+
+// テキスト表示メイン
+function draw_text(){
+    B=1; // カーソルy座標
+    C=1; // カーソルx座標
+    HL= &text_data; // テキストデータのポインタ
+    DE=TEXT_LENGTH; // テキストインデックス
+    while(){
+        using(DE){
+            D=*HL; // 区
+            HL++;
+            A=*HL; // 点
+            HL++;
+            
+            if(D == 0){
+                if (A==0x0a){ // 改行
+                    C=1;
+                    B++;
+                }
+            }else{
+                E=A;
+                using(AF,BC,DE,HL){
+                draw_font(B,C,D,E);
+                }
+                C++;
+            }
+            A=C;
+            if(A>30){ // はみ出したら改行
+                C=1;
+                B++;
+            }
+        }
+
+        DE--;
+        using(HL){unsafe{
+            if(DE==0){break;}
+        }}
+    }
+}
+
