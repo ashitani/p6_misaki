@@ -3,6 +3,8 @@
 PC6001(初代32K) で美咲フォントを使った文章を表示します。
 OSXでしか確認していません。
 
+!(screenshot)[https://user-images.githubusercontent.com/5352510/114544053-12899a00-9c95-11eb-8d7c-4426a24f2192.png]
+
 # requirement
 
 - (XSM)[https://github.com/garymsx/xsm]　アセンブル
@@ -33,6 +35,7 @@ run
 ```
 
 で実行できます。
+
 
 # 好きなテキストに差し替え
 
