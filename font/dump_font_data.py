@@ -71,18 +71,23 @@ class Misaki():
         print("byte[] font_data = {")
 
         ku_range=[1,2] #1区のみ
-        ten_range=[1,83] #94*7/8
+        ten_range=[1,84] #94*7/8
         self.put_img_data_range_kana( ku_range,ten_range)
 
 #        ku_range=[1,8] #記号入り
 #        ku_range=[1,6] #記号ぬき
         ku_range=[3,6] #記号ぬき
-        ten_range=[1,83]
+        ten_range=[1,84]
         self.put_img_data_range_kana( ku_range,ten_range)
 
         ku_range=[16,47]
-        ten_range=[1,83]
+        ten_range=[1,84]
         self.put_img_data_range( ku_range,ten_range)
+
+        ku_range=[47,48]
+        ten_range=[1,int(51*7/8)+1]
+        self.put_img_data_range( ku_range,ten_range)
+
 
         print("};")
         print("int font_data_end;")

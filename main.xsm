@@ -30,6 +30,7 @@ shadow int sp_store;       // SPの退避先
 // -------------------------------------------------------
 const int VRAMA  = 0xE000; // page 2 VRAM (ATTRIBUTE)
 const int VRAMD  = 0xE200; // page 2 VRAM (DATA)
+byte [] tofu = {0xFE,0xFE,0xFE,0xFE,0xFE,0xFE,0xFE};
 
 // -------------------------------------------------------
 //  BIOS関数
@@ -159,7 +160,7 @@ function get_kuten_adr(B,C) return HL{
             using(AF,HL){unsafe{
                 DE-=2;
                 DE*=7;
-                DE*=82;
+                DE*=83;
             }}
             push DE;
             DE=C;
@@ -169,12 +170,12 @@ function get_kuten_adr(B,C) return HL{
             HL-=7;
             DE=HL;
         }
-        if (A>=16 && A<47){
+        if (A>=16 && A<=47){
             DE=B;
             using(AF,HL){unsafe{
                 DE-=12;
                 DE*=7;
-                DE*=82;
+                DE*=83;
             }}
             push DE;
             DE=C;
@@ -206,12 +207,27 @@ function get_kuten(B, C, HL) {
         IX=HL;
     }
 
+    // 範囲外の区を指定されたら豆腐
+    A=B;
+    if( A==2 || (A>=9 && A<=15) || A>47){
+        B=7;
+        DE=&tofu;
+        HL=IY;
+        loop(B){
+            A=*DE;
+            *HL=A;
+            HL++;
+        }
+        return;
+    }
+
     //    C=ten%8
     A=C;
     A&=7;
     C=A;
 
     HL=IX;  //font_data[adr]
+
 
     B=7;
     loop(B){
