@@ -3,7 +3,7 @@
 PC6001(初代32K) で美咲フォントを使った文章を表示します。
 OSXでしか確認していません。
 
-![screenshot](https://user-images.githubusercontent.com/5352510/114544053-12899a00-9c95-11eb-8d7c-4426a24f2192.png)
+![screenshot](https://user-images.githubusercontent.com/5352510/114552158-3f42af00-9c9f-11eb-94d6-7f3426b4d68f.png)
 
 # requirement
 
