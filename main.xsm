@@ -149,21 +149,21 @@ function get_kuten_adr(B,C) return HL{
         }}
         A=B;
         if (A==1){
-            DE = C;
+            unsafe{DE = C;}
             DE--;
                 using(AF,HL){unsafe{
             DE*=7;
                 }}
         }
         if (A<=8 && A>=3){
-            DE = B;
+            unsafe{DE = B;}
             using(AF,HL){unsafe{
                 DE-=2;
                 DE*=7;
                 DE*=83;
             }}
             push DE;
-            DE=C;
+            unsafe{DE=C;}
             using(AF,HL){unsafe{DE*=7;}}
             pop HL;
             HL+=DE;
@@ -171,14 +171,14 @@ function get_kuten_adr(B,C) return HL{
             DE=HL;
         }
         if (A>=16 && A<=47){
-            DE=B;
+            unsafe{DE=B;}
             using(AF,HL){unsafe{
                 DE-=12;
                 DE*=7;
                 DE*=83;
             }}
             push DE;
-            DE=C;
+            unsafe{DE=C;}
             using(AF,HL){unsafe{DE*=7;}}
             pop HL;
             HL+=DE;
